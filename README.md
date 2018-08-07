@@ -5,7 +5,7 @@ A VTO maps a table into a php object describing its fields and their relationshi
 
 The Virtual-Table-Manager manages all the VTOs and allow the user to query them. Each query will be generated on the fly and then cached into the SESSION (if a query id is provided). Params and variables provided on each call will be substituted each time.
 
-Each VTO must be declared in its own file (inside the 'vtos' directory), named 'VTOClassname.php'. Here's is a class template:
+Each VTO must be declared in its own file (inside the 'vtos' directory), named 'VTOClassname.php'. Here's a class template:
 
 ```php
 //VTOExample.php
