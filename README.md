@@ -25,8 +25,8 @@ class VTOExample extends VTO
 }
 ```
 
-On each VTO table can be performed one of the following actions, making this little library perfect to create a REST api. Each request will be translated into one and only one query.
-Variables can be bounded to a query, in the form of :variable_name, and then passed to the query as the array 'vars'; selected field names and chains (with and without '.' are reserved variable names).
+On a VTO can be performed one of the following actions, making this little library perfect to create a REST api. Each request will be translated into one and only one query.
+Variables can be bounded to a query, in the form of :variable_name and then passed to the query as the array 'vars'; selected field names and chains (with and without '.' are reserved variable names).
 
 # GET
 Perform a SELECT, returning a Resource object.
