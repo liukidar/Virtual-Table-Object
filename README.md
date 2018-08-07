@@ -37,7 +37,7 @@ Example:
 ```php
 
 $res = $vtm->get('vto_id.query_id', [
-	'fields' => ['field1', 'child_filed1.value', sum('child_field2.price'), 'parent_field1.tyepology'],
+	'fields' => ['field1', 'child_filed1.value', sum('child_field2.price'), 'parent_field1.typology'],
 	'where' => 'field2 = ? AND field3 = ?',
 	'params' => [8553, 'small']
 ]);
