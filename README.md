@@ -50,7 +50,7 @@ while($r = $res->next()) {
 
 # PUT
 Perform a UPDATE, returning the number of affected rows.
-Own and child fields can be updated, parent's ones cannot: trying to update a parent field will instead act as a select and the result row will be used to link the child to this new parent, if no parents exists the query won't update anything.
+Own and child fields can be updated, parent's ones cannot: trying to update a parent field will instead act as a select and the result row will be used to link the child to this new parent, if no parent exists the query won't update anything.
 
 ```php
 
