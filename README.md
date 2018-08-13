@@ -50,7 +50,7 @@ while($r = $res->next()) {
 
 # PUT
 Perform a UPDATE, returning the number of affected rows.
-Own and child fields can be updated, parent's ones cannot: trying to update a parent field will instead act as a select and the result row will be used to link the child to this new parent, if no parents exists the query won't update anything.
+Own and child fields can be updated, parent's ones cannot: trying to update a parent field will instead act as a select and the result row will be used to link the child to this new parent, if no parent exists the query won't update anything.
 
 ```php
 
@@ -62,8 +62,18 @@ $res = $vtm->put('vto_id.query_id', [
 	
 ```
 
-# POST - NOT IMPLEMENTED
+# POST
+Perform a INSERT, returning TRUE if the element is inserted or updated, FALSE if already present (and not updated, like with ID = ID).
+Inserting a parent field has the same behaviour of PUT. Inserting a child field has undefined behaviour (does not make sense to me), probably the query won't be valid MySQL, but you can try. The 'ON DUPLICATE KEY UPDATE' behaviour can be configured through the 'duplicate' param: you can either pass 'update' and the element will be updated with the POST data or a custom string, with each field prefixed by 'vto_id.'.
 
+```php
+
+$res = $vtm->post('vto_id.query_id', [ 
+	'fields' => ['field1' => 'value_to_insert1', 'parent_field1.field2' => 'value_to_insert2', 'parent_field2.field3' => 'value_to_insert3']
+	'duplicate' => 'vto_id.ID = vto_id.ID' //or => 'update'
+]);
+	
+```
 
 # DELETE - NOT IMPLEMENTED
 
