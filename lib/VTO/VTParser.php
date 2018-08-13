@@ -81,9 +81,12 @@ class VTP
       case VTOQ_GET:
         // SELECT
         // Field is last_joined_table.query_field
-        $field = $to_table_id . '.' . $_field[$i];
+        $field = $from_table_id . '.' . $_field[$i];
         break;
       
+      case VTOQ_POST:
+        // INSERT
+        // Same as UPDATE: instead of updating an existing value you create it, but sintax is the same (a few edits happen in the post function)
       case VTOQ_PUT:
         // UPDATE
         // If last_joined_table is a parent then you want to select one of its element based on the query_field, and update the query_field with the field value of the
@@ -94,12 +97,12 @@ class VTP
           $field = [$first_parent_from_link, $first_parent_to_link]; // ??? was [$last_child_id . '.' . $first_parent_from_link, $last_parent_to_link]
           // Last table joined needs to be joined on last_parent_table.query_field = query_var
           // instead of last_parent_table.link_to = link_from (2 replaces)
-          $joined_tables[$to_table_id] = str_replace([$last_parent_from_link, '.' . $link->to_field], [':' . $_options['as'], '.' . $_field[$i]], $joined_tables[$to_table_id]);
+          $joined_tables[$from_table_id] = str_replace([$last_parent_from_link, '.' . $link->to_field], [':' . $_options['as'], '.' . $_field[$i]], $joined_tables[$from_table_id]);
         }
         // If last_joined_table is a child then just update the selected field
         else {
           // last_joined_table.query_field = query_var
-          $field = [$to_table_id . '.' . $_field[$i], ':' . $_options['as']];
+          $field = [$from_table_id . '.' . $_field[$i], ':' . $_options['as']];
         }
         break;
     }
@@ -130,13 +133,10 @@ class VTP
         $as = $value;
       }
 
-      // Get field path (match: something.else.more_and_more)
-      $match = [];
-      preg_match('/[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*/m', $field, $match);
-      $path = explode('.', $match[0]);
+      // Get field path
+      $path = explode('.', $field);
       // Parse field
-      $normalized_field = $this->parse_field($_VTM, $_VTO, $path, VTOQ_GET, $joined_tables);
-      $field = str_replace($match[0], $normalized_field, $field);
+      $field = $this->parse_field($_VTM, $_VTO, $path, VTOQ_GET, $joined_tables);
 
       // Add aggregator
       if(is_array($value)){
@@ -183,19 +183,15 @@ class VTP
   public function parse_put($_VTM, $_VTO, $_data)
   {
     $joined_tables = [];
-    $normalized_fields = [];
+    $parsed_fields = [];
     //UPDATE
     $query = 'UPDATE ' . $_VTO->name . ' AS ' . $_VTO->id;
-    foreach($_data['fields'] as $key => $field) {
-      if(!is_int($key)){
-        $field = $key;
-      }
+    $keys = array_keys($_data['fields']);
+    foreach($keys as $field) {
       // Find linked field
-      preg_match('/([a-zA-Z0-9_]+)((\.)([a-zA-Z0-9_]+))*/m', $field, $match);
-      $path = explode('.', $match[0]);
+      $path = explode('.', $field);
       // Parse field
-      $normalized_field = $this->parse_field($_VTM, $_VTO, $path, VTOQ_PUT, $joined_tables, ['as' => $field]);
-      $normalized_fields[$field] = [str_replace($match[0], $normalized_field[0], $field), $normalized_field[1]];
+      $parsed_fields[$field] = $this->parse_field($_VTM, $_VTO, $path, VTOQ_PUT, $joined_tables, ['as' => $field]);
     }
 
     //JOIN
@@ -210,7 +206,7 @@ class VTP
         $field = $key;
       }
       // Add field update
-      $query.= $normalized_fields[$field][0] . ' = '. $normalized_fields[$field][1] . ', ';
+      $query.= $parsed_fields[$field][0] . ' = '. $parsed_fields[$field][1] . ', ';
     }
     $query = substr($query, 0, -2);
 
@@ -219,7 +215,67 @@ class VTP
       $query.= ' WHERE ' . $_data['where'];
     }
 
-      // Cache all vars to be replaced (match: :somethi.ng_)
+    // Catch all vars to be replaced (match: :somethi.ng_)
+    $matches = [];
+    preg_match_all('/\:[a-zA-Z0-9_\.]+/m', $query, $matches);
+    $vars = [];
+    foreach($matches[0] as $var) {
+      $vars[$var] = NULL;
+    }
+    
+    return [$query, $vars];
+  }
+
+  public function parse_post($_VTM, $_VTO, $_data)
+  {
+    $joined_tables = [];
+    $parsed_fields = [];
+
+    $query = 'INSERT INTO ' . $_VTO->name . ' (';
+
+    // TODO
+    $keys = array_keys($_data['fields']);
+    foreach($keys as $field) {
+      // Find linked field
+      $path = explode('.', $field);
+      // Parse field
+      $parsed_fields[$field] = $this->parse_field($_VTM, $_VTO, $path, VTOQ_POST, $joined_tables, ['as' => $field]);
+    }
+
+    foreach($parsed_fields as $key => $field) {
+      $query .= str_replace($_VTO->id. '.' , '', $field[0]) . ', ';
+    }
+    $query = substr($query, 0, -2) . ') SELECT ';
+
+    foreach($parsed_fields as $key => $field) {
+      $query .= $field[1] . ', ';
+    }
+    $query = substr($query, 0, -2);
+
+    //JOIN
+    $first_join = explode(' ON ', array_shift($joined_tables), 2);
+    $query .= str_replace('INNER JOIN', 'FROM', $first_join[0]);
+    foreach($joined_tables as $join) {
+      // Join each needed table
+      $query .= $join;
+    }
+    $query .= ' WHERE ' . $first_join[1];
+
+    if(isset($_data['duplicate'])) {
+      $query .= ' ON DUPLICATE KEY UPDATE ';
+      if($_data['duplicate'] === 'update') {
+        foreach($parsed_fields as $key => $field) {
+          $query .= str_replace($_VTO->id. '.' , $_VTO->name . '.', $field[0]) . ' = ';
+          $query .= $field[1] . ', ';
+        }
+        $query = substr($query, 0, -2);
+      }
+      else {
+        $query .= str_replace($_VTO->id. '.' , $_VTO->name . '.', $_data['duplicate']);
+      }
+    }
+
+    // Catch all vars to be replaced (match: :somethi.ng_)
     $matches = [];
     preg_match_all('/\:[a-zA-Z0-9_\.]+/m', $query, $matches);
     $vars = [];

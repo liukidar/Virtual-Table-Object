@@ -60,6 +60,10 @@ class VTM
           break;
         case VTOQ_PUT:
           $query = $this->VTP->parse_put($this, $VTO, $_data);
+          break;
+        case VTOQ_POST:
+          $query = $this->VTP->parse_post($this, $VTO, $_data);
+          break;
 
         default:
           //TODO Error
@@ -122,11 +126,18 @@ class VTM
 
     echo $query[0];
 
-    $this->sql->query($query[0]);
+    //$this->sql->query($query[0]);
     if($this->sql->error) {
       echo 'Invalid query<br>';
     }
 
     return $this->sql->affected_rows;
+  }
+
+  public function post($_VTO, $_data)
+  {
+    $query = $this->query(VTOQ_POST, $_VTO, $_data);
+
+    echo $query[0];
   }
 }
