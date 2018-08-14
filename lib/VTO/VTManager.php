@@ -148,8 +148,6 @@ class VTM
   {
     $query = $this->query(VTOQ_GET, $_VTO, $_data);
     
-    echo $query;
-
     $res = new Resource($this->sql->query($query));
     if($this->sql->exceptionHandler) {
       $this->throw_error('Invalid query', $this->sql->exceptionHandler);
@@ -165,8 +163,6 @@ class VTM
   public function put($_VTO, $_data)
   {
     $query = $this->query(VTOQ_PUT, $_VTO, $_data);
-
-    echo $query;
 
     $this->sql->query($query);
     if($this->sql->exceptionHandler) {
