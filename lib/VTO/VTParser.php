@@ -5,10 +5,16 @@
  */
 class VTP
 {
+  protected $VTM;
+
+  public function __construct($_VTM) {
+    $this->VTM = $_VTM;
+  }
+
   /**
    * Process a query's field, joining all the needed tables
    */
-  protected function parse_field($_VTM, $_VTO, $_field, $_query, &$joined_tables, $_options = NULL)
+  protected function parse_field($_VTO, $_field, $_query, &$joined_tables, $_options = NULL)
   {
     // ID of the last included table (last element of the join chain)
     $from_table_id = $_VTO->id;
@@ -41,8 +47,12 @@ class VTP
         $link = $_VTO->parents[$_field[$i]];
         $last_link_type = VTOL_PARENT;
       }
+      // Link not found
+      if(!isset($link)) {
+        $this->VTM->throw_error('Invalid link', $_field[$i]);
+      }
       // Load table
-      $link_VTO = $_VTM->require($link->table);
+      $link_VTO = $this->VTM->require($link->table);
 
       // If table is not already joined (from other fields) then join it
       if(!isset($joined_tables[$to_table_id])) {
@@ -105,6 +115,10 @@ class VTP
           $field = [$from_table_id . '.' . $_field[$i], ':' . $_options['as']];
         }
         break;
+      
+      case VTOQ_DELETE:
+        $field = $from_table_id;
+        break;
     }
 
     return $field;
@@ -113,7 +127,7 @@ class VTP
   /**
    * Perfrom a select onto the virtual table
    */
-  public function parse_get($_VTM, $_VTO, $_data)
+  public function parse_get($_VTO, $_data)
   {
     //Array of needed joins
     $joined_tables = [];
@@ -136,7 +150,7 @@ class VTP
       // Get field path
       $path = explode('.', $field);
       // Parse field
-      $field = $this->parse_field($_VTM, $_VTO, $path, VTOQ_GET, $joined_tables);
+      $field = $this->parse_field($_VTO, $path, VTOQ_GET, $joined_tables);
 
       // Add aggregator
       if(is_array($value)){
@@ -180,7 +194,7 @@ class VTP
     return [$query, $vars];
   }
   
-  public function parse_put($_VTM, $_VTO, $_data)
+  public function parse_put($_VTO, $_data)
   {
     $joined_tables = [];
     $parsed_fields = [];
@@ -191,7 +205,7 @@ class VTP
       // Find linked field
       $path = explode('.', $field);
       // Parse field
-      $parsed_fields[$field] = $this->parse_field($_VTM, $_VTO, $path, VTOQ_PUT, $joined_tables, ['as' => $field]);
+      $parsed_fields[$field] = $this->parse_field($_VTO, $path, VTOQ_PUT, $joined_tables, ['as' => $field]);
     }
 
     //JOIN
@@ -215,6 +229,12 @@ class VTP
       $query.= ' WHERE ' . $_data['where'];
     }
 
+    //OPTIONS
+    if(isset($_data['options'])) {
+      // Add option clause
+      $query.= ' ' . $_data['options'];
+    }
+
     // Catch all vars to be replaced (match: :somethi.ng_)
     $matches = [];
     preg_match_all('/\:[a-zA-Z0-9_\.]+/m', $query, $matches);
@@ -226,20 +246,19 @@ class VTP
     return [$query, $vars];
   }
 
-  public function parse_post($_VTM, $_VTO, $_data)
+  public function parse_post($_VTO, $_data)
   {
     $joined_tables = [];
     $parsed_fields = [];
 
     $query = 'INSERT INTO ' . $_VTO->name . ' (';
 
-    // TODO
     $keys = array_keys($_data['fields']);
     foreach($keys as $field) {
       // Find linked field
       $path = explode('.', $field);
       // Parse field
-      $parsed_fields[$field] = $this->parse_field($_VTM, $_VTO, $path, VTOQ_POST, $joined_tables, ['as' => $field]);
+      $parsed_fields[$field] = $this->parse_field($_VTO, $path, VTOQ_POST, $joined_tables, ['as' => $field]);
     }
 
     foreach($parsed_fields as $key => $field) {
@@ -253,13 +272,15 @@ class VTP
     $query = substr($query, 0, -2);
 
     //JOIN
-    $first_join = explode(' ON ', array_shift($joined_tables), 2);
-    $query .= str_replace('INNER JOIN', 'FROM', $first_join[0]);
-    foreach($joined_tables as $join) {
-      // Join each needed table
-      $query .= $join;
+    if(count($joined_tables)) {
+      $first_join = explode(' ON ', array_shift($joined_tables), 2);
+      $query .= str_replace('INNER JOIN', 'FROM', $first_join[0]);
+      foreach($joined_tables as $join) {
+        // Join each needed table
+        $query .= $join;
+      }
+      $query .= ' WHERE ' . $first_join[1];
     }
-    $query .= ' WHERE ' . $first_join[1];
 
     if(isset($_data['duplicate'])) {
       $query .= ' ON DUPLICATE KEY UPDATE ';
@@ -276,6 +297,56 @@ class VTP
     }
 
     // Catch all vars to be replaced (match: :somethi.ng_)
+    $matches = [];
+    preg_match_all('/\:[a-zA-Z0-9_\.]+/m', $query, $matches);
+    $vars = [];
+    foreach($matches[0] as $var) {
+      $vars[$var] = NULL;
+    }
+    
+    return [$query, $vars];
+  }
+
+  public function parse_delete($_VTO, $_data) {
+    // Array of needed joins
+    $joined_tables = [];
+    $parsed_fields = [];
+    // DELETE
+    $query = 'DELETE ' . $_VTO->id . ', ';
+    if($_data['fields']) {
+      foreach($_data['fields'] as $field) {
+        // Get field path
+        $field .= '.*';
+        $path = explode('.', $field);
+        // Parse field
+        $parsed_fields[$field] = $this->parse_field($_VTO, $path, VTOQ_DELETE, $joined_tables);
+      }
+      foreach($parsed_fields as $delete) {
+        $query .= $delete . ', ';
+      }
+    }
+    $query = substr($query, 0, -2);
+    $query .= ' FROM ' . $_VTO->name . ' AS ' . $_VTO->id;
+    
+    //JOIN
+    foreach($joined_tables as $join) {
+      // Join each needed table
+      $query.= $join;
+    }
+    
+    //WHERE
+    if(isset($_data['where'])){
+      // Add where clause
+      $query.= ' WHERE ' . $_data['where'];
+    }
+
+    //OPTIONS
+    if(isset($_data['options'])) {
+      // Add option clause
+      $query.= ' ' . $_data['options'];
+    }
+
+    // Caching all vars to be replaced (match: :somethi.ng_)
     $matches = [];
     preg_match_all('/\:[a-zA-Z0-9_\.]+/m', $query, $matches);
     $vars = [];

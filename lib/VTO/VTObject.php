@@ -6,6 +6,7 @@ define('VTOL_PARENT', 2);
 define('VTOQ_GET', 0);
 define('VTOQ_PUT', 1);
 define('VTOQ_POST', 2);
+define('VTOQ_DELETE', 3);
 
 /**
  * Child -> Parent relation to $table on $table.$to_field = $from_field

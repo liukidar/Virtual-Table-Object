@@ -14,15 +14,27 @@ class VTM
   protected $VTOs = [];
   protected $path;
   protected $cache;
+
+  protected $error;
   
-  public function __construct($_sql, $_path = 'vtos/', $_cache = true)
+  public function __construct($_sql, $_options = NULL)
   {
     session_start();
     $this->sql = $_sql;
-    $this->VTP = new VTP();
-    $this->path = $_path;
-    $this->cache = $_cache;
-    $this->sql->safequery('SET SESSION group_concat_max_len = 1024 * 1024');
+    $this->VTP = new VTP($this);
+    $this->path = $_options['path'] ?: 'vtos/';
+    $this->cache = $_options['cache'] ?: false;
+    $this->error = $_options['error'] ?: NULL;
+
+    $this->sql->query('SET SESSION group_concat_max_len = 1024 * 1024');
+  }
+
+  public function throw_error($_error, $_info) {
+    if($this->error) {
+      $this->error->throw_error($_error, $_info);
+    } else {
+      echo '<b>'.$_error.': '.$_info.'</b><br>';
+    }
   }
 
   /**
@@ -56,17 +68,20 @@ class VTM
       $VTO = $this->require($_VTO);
       switch ($_query) {
         case VTOQ_GET:
-          $query = $this->VTP->parse_get($this, $VTO, $_data);
+          $query = $this->VTP->parse_get($VTO, $_data);
           break;
         case VTOQ_PUT:
-          $query = $this->VTP->parse_put($this, $VTO, $_data);
+          $query = $this->VTP->parse_put($VTO, $_data);
           break;
         case VTOQ_POST:
-          $query = $this->VTP->parse_post($this, $VTO, $_data);
+          $query = $this->VTP->parse_post($VTO, $_data);
+          break;
+        case VTOQ_DELETE:
+          $query = $this->VTP->parse_delete($VTO, $_data);
           break;
 
         default:
-          //TODO Error
+          $this->throw_error('Query type not supported', $_query);
           break;
       }
       if($id) {
@@ -101,7 +116,7 @@ class VTM
       }
     }
     // Actual variables substitution
-    $query[0] = strtr($query[0], $query[1]);
+    $query = strtr($query[0], $query[1]);
     
     return $query;
   }
@@ -110,11 +125,11 @@ class VTM
   {
     $query = $this->query(VTOQ_GET, $_VTO, $_data);
     
-    echo $query[0];
+    echo $query;
 
-    $res = new Resource($this->sql->query($query[0]));
+    $res = new Resource($this->sql->query($query));
     if($this->sql->error) {
-      echo 'Invalid query<br>';
+      $this->throw_error('Invalid query', $this->sql->error);
     }
 
     return $res;
@@ -124,11 +139,11 @@ class VTM
   {
     $query = $this->query(VTOQ_PUT, $_VTO, $_data);
 
-    echo $query[0];
+    echo $query;
 
-    //$this->sql->query($query[0]);
+    $this->sql->query($query);
     if($this->sql->error) {
-      echo 'Invalid query<br>';
+      $this->throw_error('Invalid query', $this->sql->error);
     }
 
     return $this->sql->affected_rows;
@@ -138,6 +153,27 @@ class VTM
   {
     $query = $this->query(VTOQ_POST, $_VTO, $_data);
 
-    echo $query[0];
+    echo $query;
+
+    $this->sql->query($query);
+    if($this->sql->error) {
+      $this->throw_error('Invalid query', $this->sql->error);
+    }
+
+    return $this->sql->affected_rows;
+  }
+
+  public function delete($_VTO, $_data)
+  {
+    $query = $this->query(VTOQ_DELETE, $_VTO, $_data);
+
+    echo $query;
+
+    $this->sql->query($query);
+    if($this->sql->error) {
+      $this->throw_error('Invalid query', $this->sql->error);
+    }
+
+    return $this->sql->affected_rows;
   }
 }
