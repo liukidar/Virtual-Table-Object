@@ -66,7 +66,7 @@ $res = $vtm->put('vto_id.query_id', [
 ```
 
 ## POST
-Perform a INSERT, returning TRUE if the element is inserted or updated, FALSE if already present (and not updated, like with ID = ID).
+Perform a INSERT, returning 1 or 2 if the element is inserted or updated, FALSE if already present (and not updated, like with ID = ID).
 Inserting a parent field has the same behaviour of PUT. Inserting a child field has undefined behaviour (does not make sense to me), probably the query won't be valid MySQL, but you can try. The 'ON DUPLICATE KEY UPDATE' behaviour can be configured through the 'duplicate' param: you can either pass 'update' and the element will be updated with the POST data or a custom string, with each field prefixed by 'vto_id.'. Options can be added.
 
 ```php
