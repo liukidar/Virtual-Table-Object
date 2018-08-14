@@ -41,8 +41,8 @@ Example:
 $res = $vtm->get('vto_id.query_id', [
 	'fields' => ['field1', 'child_filed1.value', VTA::sum('child_field2.price'), 'parent_field1.typology'],
 	'where' => 'vto_id.field2 = ? AND vto_id.field3 = ?',
-	'params' => [0, 'true'],
-	'options' => 'LIMIT 2 OFFSET 4'
+	'params' => [1, 'true'],
+	'options' => 'LIMIT 2 OFFSET 3'
 ]);
 
 while($r = $res->next()) {
@@ -60,7 +60,7 @@ Own and child fields can be updated, parent's ones cannot: trying to update a pa
 $res = $vtm->put('vto_id.query_id', [ 
 	'fields' => ['field1' => 'value_to_update1', 'child_field1.field2' => 'value_to_update2', 'parent_field1.field3' => 'value_to_update3', 'parent_field1.child_field2.field4' => 'value_to_update4'],
 	'where' => 'vto_id.field2 = ?',
-	'params' => [0]
+	'params' => [5]
 ]);
 
 ```
@@ -86,7 +86,7 @@ Perform a DELETE, returning the number of affected rows. Works exactly like a GE
 $res = $vtm->delete('vto_id.query_id', [ 
 	'fields' => ['child_table1', 'parent_table1', 'parent_table2.child_table2']
 	'where' => 'vto_id.field2 = ?',
-	'params' => [0]
+	'params' => [8]
 ]);
 
 ```
