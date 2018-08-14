@@ -15,8 +15,13 @@ class VTM
   protected $path;
   protected $cache;
 
+  protected $exceptionHandler;
   protected $error;
   
+  /**
+   * @param mixed MySQL query and escaping capable object
+   * @param array [path, cache, error]
+   */
   public function __construct($_sql, $_options = NULL)
   {
     session_start();
@@ -24,17 +29,23 @@ class VTM
     $this->VTP = new VTP($this);
     $this->path = $_options['path'] ?: 'vtos/';
     $this->cache = $_options['cache'] ?: false;
-    $this->error = $_options['error'] ?: NULL;
+    $this->exceptionHandler = $_options['error'] ?: NULL;
 
     $this->sql->query('SET SESSION group_concat_max_len = 1024 * 1024');
   }
 
+  /**
+   * @param string error main description
+   * @param string error sensitive data
+   */
   public function throw_error($_error, $_info) {
-    if($this->error) {
-      $this->error->throw_error($_error, $_info);
+    if($this->exceptionHandler) {
+      $this->exceptionHandler->throw_error($_error, $_info);
     } else {
       echo '<b>'.$_error.': '.$_info.'</b><br>';
     }
+
+    $this->error[] = $_error.': '.$_info;
   }
 
   /**
@@ -51,8 +62,16 @@ class VTM
     return $this->VTOs[$_VTO];
   }
 
+  /**
+   * Prepare the query to be executed
+   * @param int query type
+   * @param string target table
+   * @param array [fields, where, params, options, duplicate]
+   */
   public function query($_query, $_VTO, $_data)
   {
+    $this->error = 0;
+
     $cached = strpos($_VTO, '.');
     if($cached !== FALSE) {
       $id = $_VTO;
@@ -63,7 +82,7 @@ class VTM
     }
 
     $query = '';
-    //Creating cached query
+    // Creating cached query
     if(!isset($_SESSION['VTM'][$id]) || !$this->cache) {
       $VTO = $this->require($_VTO);
       switch ($_query) {
@@ -121,6 +140,10 @@ class VTM
     return $query;
   }
   
+  /**
+   * Perform a SELECT
+   * @return Resource selected rows
+   */
   public function get($_VTO, $_data)
   {
     $query = $this->query(VTOQ_GET, $_VTO, $_data);
@@ -128,13 +151,17 @@ class VTM
     echo $query;
 
     $res = new Resource($this->sql->query($query));
-    if($this->sql->error) {
-      $this->throw_error('Invalid query', $this->sql->error);
+    if($this->sql->exceptionHandler) {
+      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
     }
 
     return $res;
   }
 
+  /**
+   * Perform a UPDATE
+   * @return int number of affected rows
+   */
   public function put($_VTO, $_data)
   {
     $query = $this->query(VTOQ_PUT, $_VTO, $_data);
@@ -142,36 +169,40 @@ class VTM
     echo $query;
 
     $this->sql->query($query);
-    if($this->sql->error) {
-      $this->throw_error('Invalid query', $this->sql->error);
+    if($this->sql->exceptionHandler) {
+      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
     }
 
     return $this->sql->affected_rows;
   }
 
+  /**
+   * Perform a INSERT
+   * @return int number of affected rows according to MySQL specification
+   */
   public function post($_VTO, $_data)
   {
     $query = $this->query(VTOQ_POST, $_VTO, $_data);
 
-    echo $query;
-
     $this->sql->query($query);
-    if($this->sql->error) {
-      $this->throw_error('Invalid query', $this->sql->error);
+    if($this->sql->exceptionHandler) {
+      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
     }
 
     return $this->sql->affected_rows;
   }
 
+  /**
+   * Perform a DELETE
+   * @return int number of deleted rows
+   */
   public function delete($_VTO, $_data)
   {
     $query = $this->query(VTOQ_DELETE, $_VTO, $_data);
 
-    echo $query;
-
     $this->sql->query($query);
-    if($this->sql->error) {
-      $this->throw_error('Invalid query', $this->sql->error);
+    if($this->sql->exceptionHandler) {
+      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
     }
 
     return $this->sql->affected_rows;

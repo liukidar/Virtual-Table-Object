@@ -129,9 +129,9 @@ class VTP
    */
   public function parse_get($_VTO, $_data)
   {
-    //Array of needed joins
+    // Array of needed joins
     $joined_tables = [];
-    //SELECT
+    // SELECT
     $query = 'SELECT ';
     foreach($_data['fields'] as $key => $value) {
       // Decode field: "field", [field, name], field => name
@@ -162,22 +162,22 @@ class VTP
     }
     $query = substr($query, 0, -2);
     
-    //FROM
+    // FROM
     $query.= ' FROM ' . $_VTO->name . ' AS ' . $_VTO->id;
     
-    //JOIN
+    // JOIN
     foreach($joined_tables as $join) {
       // Join each needed table
       $query.= $join;
     }
     
-    //WHERE
+    // WHERE
     if(isset($_data['where'])){
       // Add where clause
       $query.= ' WHERE ' . $_data['where'];
     }
 
-    //OPTIONS
+    // OPTIONS
     if(isset($_data['options'])) {
       // Add option clause
       $query.= ' ' . $_data['options'];
@@ -198,7 +198,7 @@ class VTP
   {
     $joined_tables = [];
     $parsed_fields = [];
-    //UPDATE
+    // UPDATE
     $query = 'UPDATE ' . $_VTO->name . ' AS ' . $_VTO->id;
     $keys = array_keys($_data['fields']);
     foreach($keys as $field) {
@@ -208,7 +208,7 @@ class VTP
       $parsed_fields[$field] = $this->parse_field($_VTO, $path, VTOQ_PUT, $joined_tables, ['as' => $field]);
     }
 
-    //JOIN
+    // JOIN
     foreach($joined_tables as $join) {
       // Join each needed table
       $query.= $join;
@@ -224,12 +224,12 @@ class VTP
     }
     $query = substr($query, 0, -2);
 
-    //WHERE
+    // WHERE
     if(isset($_data['where'])){
       $query.= ' WHERE ' . $_data['where'];
     }
 
-    //OPTIONS
+    // OPTIONS
     if(isset($_data['options'])) {
       // Add option clause
       $query.= ' ' . $_data['options'];
@@ -271,7 +271,7 @@ class VTP
     }
     $query = substr($query, 0, -2);
 
-    //JOIN
+    // JOIN
     if(count($joined_tables)) {
       $first_join = explode(' ON ', array_shift($joined_tables), 2);
       $query .= str_replace('INNER JOIN', 'FROM', $first_join[0]);
@@ -328,19 +328,19 @@ class VTP
     $query = substr($query, 0, -2);
     $query .= ' FROM ' . $_VTO->name . ' AS ' . $_VTO->id;
     
-    //JOIN
+    // JOIN
     foreach($joined_tables as $join) {
       // Join each needed table
       $query.= $join;
     }
     
-    //WHERE
+    // WHERE
     if(isset($_data['where'])){
       // Add where clause
       $query.= ' WHERE ' . $_data['where'];
     }
 
-    //OPTIONS
+    // OPTIONS
     if(isset($_data['options'])) {
       // Add option clause
       $query.= ' ' . $_data['options'];
