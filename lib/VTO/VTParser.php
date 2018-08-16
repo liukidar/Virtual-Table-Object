@@ -77,6 +77,10 @@ class VTP
           // parent.ID_to = child.ID_from
           $condition .= $last_parent_to_link . ' = ' . $last_parent_from_link;
         }
+        else if(!count($condition)) {
+          $this->throw_error('Children join condition not provided', $_field[$i]);
+          $condition = '0';
+        }
 
         // Join table
         $joined_tables[$to_table_id] = ' INNER JOIN ' . $link_VTO->name . ' AS ' . $to_table_id . ' ON ' . $condition; //TODO option for INNER
