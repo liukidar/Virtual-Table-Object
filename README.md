@@ -97,4 +97,4 @@ $res = $vtm->delete('vto_id.query_id', [
 * You can disable caching by passing 'false' to the VTM constructor or by not giving an ID to the queries. *E.g $vtm->delete('vto_id', ...)*
 * You can change the 'vtos' directory path by passing the new relative path to the VTM constructor.
 * The aggregators are declared inside the VTA class as static methods.
-* get-on, update-on, delete-on condition can be provided to a parent link as fourth parameters. The result join condition will be: field_from = field_to AND custom condition.
+* get-on, update-on, delete-on condition can be provided to a parent link as fourth parameters. The result join condition will be: field_from = field_to AND custom_condition.
