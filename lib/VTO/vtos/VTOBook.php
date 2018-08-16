@@ -5,7 +5,7 @@ class VTOBook extends VTO {
     	parent::__construct('book', '_bookrewind_books', [
             'owner' => ['owner', 'user', 'id'],
             'buyer' => ['buyer', 'user', 'id'],
-            'category' => ['ID_adozione', 'category', 'id']
+            'category' => ['ID_adozione', 'category', 'id', ['update-on' => 'category.ID = 2']]
         ]);
     }
 }

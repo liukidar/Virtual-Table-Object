@@ -25,7 +25,7 @@ while($r = $res->next()) {
 $start_time = microtime(TRUE);
 
 $res = $vtm->put('user', [ 
-	'fields' => ['book.status' => 0, 'mail' => 'pincopallino@gmail.com'],
+	'fields' => ['book.category.ISBN' => 0, 'mail' => 'pincopallino@gmail.com'],
 	'where' => 'user.id = ?',
 	'params' => [8553]
 	]);

@@ -20,13 +20,15 @@ class _Parent
   public $table;
   // Linked field
   public $to_field;
-  //TODO update condition
+  // Condition
+  public $condition;
 
-  public function __construct($_from_field, $_table, $_to_field)
+  public function __construct($_from_field, $_table, $_to_field, $_condition = NULL)
   {
     $this->from_field = $_from_field;
     $this->table = $_table;
     $this->to_field = $_to_field;
+    $this->condition = [VTOQ_GET => $_condition['get-on'], VTOQ_PUT => $_condition['update-on'] ?: $_condition['get-on'], VTOQ_DELETE => $_condition['delete-on'] ?: $_condition['get-on']];
   }
 }
 
@@ -37,12 +39,11 @@ class _Child
 {
   public $table;
   public $condition;
-  //TODO delete condition
 
   public function __construct($_table, $_condition)
   {
     $this->table = $_table;
-    $this->condition = $_condition;
+    $this->condition = [VTOQ_GET => $_condition['get-on'], VTOQ_PUT => $_condition['update-on'] ?: $_condition['get-on'], VTOQ_DELETE => $_condition['delete-on'] ?: $_condition['get-on']];
   }
 }
 
@@ -64,7 +65,7 @@ class VTO
     $this->id = $_id;
     $this->name = $_table;
     foreach($_parents as $id => $parent) {
-      $this->parents[$id] = new _Parent($parent[0], $parent[1], $parent[2]);
+      $this->parents[$id] = new _Parent($parent[0], $parent[1], $parent[2], $parent[3]);
     }
     foreach($_children as $id => $children) {
       $this->children[$id] = new _Child($children[0], $children[1]);

@@ -59,13 +59,13 @@ class VTP
         // Compute join condition
         $condition = '';
         // Add custom condition
-        if(isset($link->condition)) {
+        if(isset($link->condition[$_query])) {
           // Replace joined table id with computed to table id and active table id with from table id
-          $condition .= '(' . str_replace([$_field[$i].'.', $_VTO->id.'.'], [$to_table_id.'.', $from_table_id.'.'], $link->condition) . ')';
+          $condition .= '(' . str_replace([$_field[$i].'.', $_VTO->id.'.'], [$to_table_id.'.', $from_table_id.'.'], $link->condition[$_query]) . ')';
         }
         // If is a parent table then add default join condition: parent.ID_to = child.ID_from
         if($last_link_type === VTOL_PARENT) {
-          if(isset($link->condition)) {
+          if(isset($link->condition[$_query])) {
             $condition.= ' AND ';
           }
           // child.ID_from
