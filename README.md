@@ -20,7 +20,7 @@ class VTOExample extends VTO
 			'parent2_id' => ['field_from', 'parent2_table_id', 'field_to'],
 			'parent3_id' => ['field_from', 'parent3_table_id', 'filed_to']
 		], [
-			'child1_id' => ['child1_table_id', link_condition] //e.g. 'example_id.child > child1_table_id.ID'
+			'child1_id' => ['child1_table_id', ['get-on' => condition1, 'update-on' => condition2, 'delete-on' => condition3] //e.g. 'example_id.child > child1_table_id.ID', get-on condition is required and it's the default value for the other two ones 
 		]);
 	}
 }
@@ -97,3 +97,4 @@ $res = $vtm->delete('vto_id.query_id', [
 * You can disable caching by passing 'false' to the VTM constructor or by not giving an ID to the queries. *E.g $vtm->delete('vto_id', ...)*
 * You can change the 'vtos' directory path by passing the new relative path to the VTM constructor.
 * The aggregators are declared inside the VTA class as static methods.
+* get-on, update-on, delete-on condition can be provided to a parent link as fourth parameters. The result join condition will be: field_from = field_to AND custom condition.
