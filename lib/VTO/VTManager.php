@@ -150,12 +150,14 @@ class VTM
     
     echo $query.'<br><br>';
 
-    $res = new Resource($this->sql->query($query));
+    $res = $this->sql->query($query);
     if($this->sql->error) {
       $this->throw_error('Invalid query', $this->sql->error);
+
+      return false;
     }
 
-    return $res;
+    return new Resource($res);
   }
 
   /**
