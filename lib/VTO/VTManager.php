@@ -151,8 +151,8 @@ class VTM
     echo $query.'<br><br>';
 
     $res = new Resource($this->sql->query($query));
-    if($this->sql->exceptionHandler) {
-      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
+    if($this->sql->error) {
+      $this->throw_error('Invalid query', $this->sql->error);
     }
 
     return $res;
@@ -169,8 +169,8 @@ class VTM
     echo $query.'<br><br>';
 
     $this->sql->query($query);
-    if($this->sql->exceptionHandler) {
-      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
+    if($this->sql->error) {
+      $this->throw_error('Invalid query', $this->sql->error);
     }
 
     return $this->sql->affected_rows;
@@ -187,8 +187,8 @@ class VTM
     echo $query.'<br><br>';
 
     $this->sql->query($query);
-    if($this->sql->exceptionHandler) {
-      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
+    if($this->sql->error) {
+      $this->throw_error('Invalid query', $this->sql->error);
     }
 
     return $this->sql->affected_rows;
@@ -205,8 +205,8 @@ class VTM
     echo $query.'<br><br>';
 
     $this->sql->query($query);
-    if($this->sql->exceptionHandler) {
-      $this->throw_error('Invalid query', $this->sql->exceptionHandler);
+    if($this->sql->error) {
+      $this->throw_error('Invalid query', $this->sql->error);
     }
 
     return $this->sql->affected_rows;
